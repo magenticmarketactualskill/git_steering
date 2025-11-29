@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "../lib/git_steering"
+require "thor"
+
+module GitSteering
+  class CLI < Thor
+    desc "symlink_build", "Build symlinks from vendor gems and submodules to .kiro/steering"
+    method_option :dry_run, type: :boolean, aliases: "-d", desc: "Show what would be done without making changes"
+    method_option :project_root, type: :string, aliases: "-p", desc: "Project root directory (default: current directory)"
+    def symlink_build
+      configure_from_options
+
+      puts Rainbow("GitSteering: Building symlinks...").bright
+      puts Rainbow("Project root: #{GitSteering.configuration.project_root}").cyan
+      puts Rainbow("Dry run mode: #{GitSteering.configuration.dry_run}").yellow if GitSteering.configuration.dry_run
+      puts ""
+
+      manager = SymlinkManager.new
+      reporter = manager.symlink_build
+      reporter.print_summary
+
+      if GitSteering.configuration.dry_run
+        puts Rainbow("\nDry run completed. No changes were made.").yellow.bright
+      end
+    end
+
+    desc "version", "Show GitSteering version"
+    def version
+      puts "GitSteering version #{GitSteering::VERSION}"
+    end
+
+    private
+
+    def configure_from_options
+      GitSteering.configure do |config|
+        config.dry_run = options[:dry_run] if options[:dry_run]
+        config.project_root = options[:project_root] if options[:project_root]
+      end
+    end
+  end
+end
+
+GitSteering::CLI.start(ARGV)
