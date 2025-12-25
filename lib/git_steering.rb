@@ -5,6 +5,7 @@ require_relative "git_steering/configuration"
 require_relative "git_steering/symlink_manager"
 require_relative "git_steering/file_scanner"
 require_relative "git_steering/reporter"
+require_relative "git_steering/interface_communicator"
 
 module GitSteering
   class Error < StandardError; end

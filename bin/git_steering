@@ -3,6 +3,8 @@
 
 require_relative "../lib/git_steering"
 require "thor"
+require "rainbow"
+require "pathname"
 
 module GitSteering
   class CLI < Thor
@@ -24,6 +26,45 @@ module GitSteering
       if GitSteering.configuration.dry_run
         puts Rainbow("\nDry run completed. No changes were made.").yellow.bright
       end
+    end
+
+    desc "communicate_to_children", "Generate interface requirements for child components (replaces .kiro/specs/toChildren)"
+    method_option :project_root, type: :string, aliases: "-p", desc: "Project root directory (default: current directory)"
+    def communicate_to_children
+      configure_from_options
+      
+      puts Rainbow("GitSteering: Communicating interface requirements to children...").bright
+      puts Rainbow("Project root: #{GitSteering.configuration.project_root}").cyan
+      puts ""
+      
+      communicator = InterfaceCommunicator.new(GitSteering.configuration.project_root)
+      results = communicator.communicate_to_children
+      
+      if results.empty?
+        puts Rainbow("No child components found.").yellow
+      else
+        puts Rainbow("Generated interface files for #{results.size} child components:").green
+        results.each do |child_path, _specs|
+          relative_path = Pathname.new(child_path).relative_path_from(Pathname.new(GitSteering.configuration.project_root))
+          puts "  ✓ #{relative_path}/.kiro/interfaces/requirements.md"
+        end
+      end
+    end
+
+    desc "communicate_to_parent", "Generate available abstractions for parent application (replaces .kiro/specs/toParent)"
+    method_option :project_root, type: :string, aliases: "-p", desc: "Project root directory (default: current directory)"
+    def communicate_to_parent
+      configure_from_options
+      
+      puts Rainbow("GitSteering: Communicating available abstractions to parent...").bright
+      puts Rainbow("Project root: #{GitSteering.configuration.project_root}").cyan
+      puts ""
+      
+      communicator = InterfaceCommunicator.new(GitSteering.configuration.project_root)
+      communicator.communicate_to_parent
+      
+      puts Rainbow("Generated parent interface file:").green
+      puts "  ✓ .kiro/interfaces/abstractions.md"
     end
 
     desc "version", "Show GitSteering version"
